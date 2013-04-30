@@ -121,8 +121,8 @@ def _median_difference(image):
             patch = image[startrow:endrow, startcol:endcol]
             locali = 0 if i - 1 < 0 else 1
             localj = 0 if j - 1 < 0 else 1
-
             D.extend(_differences(patch, locali, localj))
+
     return np.median(np.array(D))
 
 def image_affinities(image, q = 1.5, gamma = 0.0):
@@ -146,11 +146,10 @@ def image_affinities(image, q = 1.5, gamma = 0.0):
     A : array, shape (P * Q, P * Q)
         Symmetric affinity matrix.
     """
-    med = _median_difference(image)
     std = gamma
     if gamma <= 0.0:
+        med = _median_difference(image)
         std = 1.0 / (2 * ((med * q) ** 2))
-    numpixels = image.shape[0] * image.shape[1]
     graph = _grid_to_graph(image.shape[1], image.shape[0])
     connections = graph.nonzero()
     A = sparse.lil_matrix(graph.shape)
@@ -159,10 +158,8 @@ def image_affinities(image, q = 1.5, gamma = 0.0):
     # We have to do this one at a time in a loop; rbf_kernel() doesn't have
     # a sparse mode, and therefore computing all the affinities at once--even
     # sparse ones--could overwhelm system memory.
-    for k in xrange(0, (np.size(connections[0]) / 2) + 1):
-        # Pixel IDs.
-        i = connections[0][k]
-        j = connections[1][k]
+    for i, j in zip(connections[0], connections[1]):
+        if A[i, j] > 0.0: continue
 
         # Where do the pixels reside?
         r1 = i / image.shape[1]
@@ -176,8 +173,9 @@ def image_affinities(image, q = 1.5, gamma = 0.0):
         A[j, i] = rbf
         A[i, i] = 1.0
         A[j, j] = 1.0
-    #return A
-    return np.array(A.todense())
+
+    return A
+    #return np.array(A.todense())
 
 def cartesian_affinities(data, distance = 2.0, sigma = 1.0):
     """
@@ -242,13 +240,11 @@ def write_mahout_affinity(A, outfile):
     rows = None
     cols = None
     if sparse.isspmatrix(A):
-        if not A.format == 'coo':
-            A = A.tocoo()
         rows, cols = A.nonzero()
     else:
         rows, cols = np.nonzero(A)
     for row, col in zip(rows, cols):
-        f.write("%s,%s,%s\n" % (row, col, A[row, col]))
+        f.write("%s,%s,%.6f\n" % (row, col, A[row, col]))
     f.close()
 
 if __name__ == "__main__":
