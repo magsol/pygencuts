@@ -61,10 +61,11 @@ def _grid_to_graph(nx, ny, return_as = scipy.sparse.coo_matrix, neighborhood = 8
     i_idx = np.hstack((edges[0], edges[1]))
     j_idx = np.hstack((edges[1], edges[0]))
 
-    graph = sparse.coo_matrix((np.hstack((weights, weights, diag)),
-        (np.hstack((i_idx, diag_idx)),
+    graph = sparse.coo_matrix(
+        (np.hstack((weights, weights, diag)), (np.hstack((i_idx, diag_idx)),
         np.hstack((j_idx, diag_idx)))),
-        (n_voxels, n_voxels))
+        shape = (n_voxels, n_voxels),
+        dtype = np.int)
     return graph
 
 def _differences(patch, i, j):
