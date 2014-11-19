@@ -23,6 +23,7 @@ import sklearn.metrics.pairwise as pairwise
 import matplotlib.pyplot as plot
 import matplotlib.cm as cm
 import eigencuts
+import affinity
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Comparative Spectral Clustering', \
@@ -55,15 +56,15 @@ if __name__ == "__main__":
     if args['type'] == "txt":
         # Comma-separated cartesian data.
         data = np.loadtxt(args['input'], delimiter = ",")
-        A = eigencuts.cartesian_affinities(data, args['distance'], args['sigma'])
+        A = affinity.cartesian_affinities(data, args['distance'], args['sigma'])
     elif args['type'] == "img":
         # PNG image.
         data = scipy.misc.imread(args['input'], flatten = True)
-        A = eigencuts.image_affinities(data)
+        A = affinity.image_affinities(data)
     else:
         # Mahout affinity data.
         data = np.loadtxt(args['original'], delimiter = ",")
-        A = eigencuts.mahout_affinities(args['input'], args['numdims'])
+        A = affinity.mahout_affinities(args['input'], args['numdims'])
 
     # Do the Eigencuts analysis.
     Ae, n = eigencuts.eigencuts(A, k = 10, b = args['halflife'])
